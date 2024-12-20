@@ -1,0 +1,373 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Layout styling */
+.container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.cat-card {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.layout {
+    display: none;
+}
+
+.image-container {
+    width: 100%;
+    height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.favorite-image {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.vote-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.button.active {
+    color: #ff4444;
+    border-bottom: 2px solid #ff4444;
+}
+
+.button:hover {
+    transform: scale(1.1);
+}
+
+/* Smooth fade effect */
+.fade-out {
+    opacity: 0;
+}
+
+
+
+/* Scrollable container for favorite images */
+#favoriteImagesContainer {
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+
+.search-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #ff4444;
+}
+
+.clear-search {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+}
+
+/* Dropdown container */
+.dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    /* Hidden by default */
+    z-index: 100;
+}
+
+.dropdown-list li {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.dropdown-list li:hover,
+.dropdown-list li.selected {
+    background-color: #f0f0f0;
+}
+
+#breedList {
+    position: absolute;
+    z-index: 10;
+    top: 100%;
+    /* Aligns directly below the search bar */
+    left: 0;
+    width: 100%;
+    /* Matches the width of the search bar's container */
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    max-height: 200px;
+    /* Limit dropdown height */
+    overflow-y: auto;
+    /* Scrollable if the list exceeds max-height */
+    display: none;
+    /* Hidden by default */
+}
+
+.breed-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+}
+
+.breed-item:hover {
+    background-color: #f7f7f7;
+}
+
+/* Ensure the container doesn't expand */
+#breedSearchContainer {
+    position: relative;
+}
+
+
+/* Slider Wrapper */
+.slider-wrapper {
+    display: flex;
+    transition: transform 0.5s ease-in-out;
+    width: 100%;
+    overflow: hidden;
+}
+
+.breed-image-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.breed-image {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    object-fit: cover;
+}
+
+.breed-image.active {
+    display: block;
+    opacity: 1;
+}
+
+.breed-image.slide-transition {
+    animation: slideIn 0.5s ease-in-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.slider-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.slider-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin: 5px;
+    background-color: #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.slider-indicator.active {
+    background: #666;
+}
+
+.breed-info {
+    margin-top: 20px;
+}
+
+.breed-title {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.breed-origin {
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.breed-description {
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.wiki-link {
+    color: #ff4444;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.slide-transition {
+    transition: transform 0.3s ease-in-out;
+}
+
+.layout {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.layout-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+}
+
+.layout-btn {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+.layout-btn.active {
+    background: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Grid Layout */
+.grid-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    width: 100%;
+    padding-right: 15px;
+    /* Compensate for scrollbar */
+}
+
+/* List Layout */
+.list-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
+
+.favorite-image {
+    width: 100%;
+    aspect-ratio: 16/9;
+    object-fit: cover;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+}
+
+/* Container styles */
+#favoriteImagesContainer {
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .grid-layout {
+        grid-template-columns: 1fr;
+    }
+}
