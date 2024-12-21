@@ -139,17 +139,28 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchNewCatImage();
   });
   function switchLayout(type) {
-    if (type === "grid") {
-      favoriteImagesContainer.className = "grid-layout";
-      gridBtn.classList.add("active");
-      listBtn.classList.remove("active");
-    } else {
-      favoriteImagesContainer.className = "list-layout";
+    // Remove both classes first
+    favoriteImagesContainer.className = `${type}-layout`;
+
+    // Update button states
+    if (type === "list") {
       listBtn.classList.add("active");
       gridBtn.classList.remove("active");
+    } else {
+      gridBtn.classList.add("active");
+      listBtn.classList.remove("active");
     }
-  }
 
+    // Adjust image sizes based on layout
+    const images = favoriteImagesContainer.getElementsByClassName('favorite-image');
+    Array.from(images).forEach(img => {
+      if (type === 'list') {
+        img.style.maxHeight = '80vh';
+      } else {
+        img.style.maxHeight = '200px';
+      }
+    });
+  }
   function displayFavoriteImages() {
     favoriteImagesContainer.innerHTML = "";
     favoriteImages.forEach((imageUrl) => {
@@ -160,10 +171,15 @@ document.addEventListener("DOMContentLoaded", () => {
       favoriteImagesContainer.appendChild(img);
     });
   }
+
   // Event listeners
   gridBtn.addEventListener("click", () => switchLayout("grid"));
   listBtn.addEventListener("click", () => switchLayout("list"));
 
+  // If there are images in localStorage, display them
+  if (favoriteImages.length > 0) {
+    displayFavoriteImages();
+  }
   // Add to Favorites (API integration)
   async function addToFavorites(imageId) {
     try {

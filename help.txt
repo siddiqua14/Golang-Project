@@ -1,0 +1,51 @@
+for windows: 
+. Verify the Setup
+Restart PowerShell.
+
+Check the values:
+
+powershell
+Copy code
+echo $env:GOPATH
+echo $env:Path
+Test bee:
+
+powershell
+Copy code
+bee version
+
+
+
+
+Run go mod tidy
+This command will clean up your module files, adding any missing dependencies and removing unused ones. It will also regenerate the go.sum file to include the correct entries.
+
+Run the following command:
+
+bash
+Copy code
+go mod tidy
+This will automatically resolve any missing dependencies and update your go.sum file with the required entries.
+
+2. Manually Add the Dependency
+If go mod tidy doesn't resolve the issue, you can manually fetch the required dependency using:
+
+bash
+Copy code
+go get github.com/beego/beego/v2@latest
+This should add the missing entry to both go.mod and go.sum.
+
+3. Verify Dependencies
+After running go mod tidy or go get, verify that the dependencies are correctly installed:
+
+bash
+Copy code
+go mod verify
+This ensures that all required modules are correctly fetched and the go.sum file has the proper entries.
+
+4. Rebuild the Application
+Once the dependencies are correctly resolved, you can try running your application again:
+
+bash
+Copy code
+bee run

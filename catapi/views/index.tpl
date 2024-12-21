@@ -12,18 +12,30 @@
 
 <body>
     <div class="container">
-        <h1>Cat Voting</h1>
+        <div class="button-container" id="catTabs" role="tablist">
 
-        <!-- Buttons for switching between Voting and Breed -->
-        <div class="button-container">
-            <button id="votingButton" class="button" title="Voting" onclick="showVotingLayout()">Voting</button>
-            <button id="breedButton" class="button" title="Breed" onclick="showBreedLayout()">Breed</button>
+            <button id="votingButton" class="button" title="Voting" onclick="showVotingLayout()" data-bs-toggle="tab"
+                data-bs-target="#voting" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 14l5-5 5 5" />
+                </svg>Voting
+            </button>
+
+
+            <button id="breedButton" class="button" title="Breed" onclick="showBreedLayout()" data-bs-toggle="tab"
+                data-bs-target="#breeds" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="M21 21l-4.35-4.35" />
+                </svg>
+                Breeds</button>
+
             <button id="favButton" class="button" title="Favorite" onclick="showFavoriteLayout()">❤️</button>
         </div>
 
         <!-- Main Card Container -->
         <div id="catCard" class="cat-card">
-            <div id="votingLayout" class="layout">
+            <div id="votingLayout" class="layout show active" role="tabpanel">
                 <div id="catImageContainer" class="image-container">
                     {{if .CatImage}}
                     <img id="catImage" src="{{.CatImage}}" alt="Cute Cat Image">
@@ -39,8 +51,7 @@
             </div>
 
             <!-- Breed Layout -->
-            <div id="breedLayout" class="layout" style="display: none;">
-                <h2>Select a Breed</h2>
+            <div id="breedLayout" class="layout" style="display: none;" role="tabpanel">
                 <div class="search-container">
                     <!-- Search bar for filtering breeds -->
                     <input type="text" id="breedSearch" class="dropdown" placeholder="Search for a breed..." />
@@ -62,7 +73,7 @@
                             Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
                         </p>
                         <a id="breedWiki" href="#" target="_blank" class="breed-wiki">
-                            Learn more on Wikipedia
+                            Wikipedia
                         </a>
                     </div>
                 </div>
@@ -80,10 +91,21 @@
             <div id="favoriteLayout" class="layout">
                 <div class="layout-controls">
                     <button id="gridBtn" class="layout-btn grid-btn active">
-                        <i class="fas fa-th"></i> Grid
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                        </svg>
                     </button>
                     <button id="listBtn" class="layout-btn list-btn">
-                        <i class="fas fa-list"></i> List
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6" />
+                            <line x1="3" y1="12" x2="21" y2="12" />
+                            <line x1="3" y1="18" x2="21" y2="18" />
+                        </svg>
                     </button>
                 </div>
                 <div id="favoriteImagesContainer" class="grid-layout">
@@ -92,6 +114,7 @@
             </div>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
