@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"fmt"
 	"github.com/beego/beego/v2/server/web"
-
+	
 )
 
 type CatController struct {
@@ -48,33 +48,43 @@ func (c *CatController) GetCatImage() {
 	c.TplName = "index.tpl"
 }
 
+
 func (c *CatController) GetCatImagesAPI() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
 
-	images, err := fetchCatImages(apiURL, apiKey)
-	if err != nil {
-		c.Data["json"] = map[string]string{"error": "Failed to fetch images"}
-		c.ServeJSON()
-		return
+	// Create a channel to receive cat images
+	imageChan := make(chan []CatImage)
+	errorChan := make(chan error)
+
+	go fetchCatImages(apiURL, apiKey, imageChan, errorChan)
+
+	select {
+	case images := <-imageChan:
+		c.Data["json"] = images
+	case err := <-errorChan:
+		c.Data["json"] = map[string]string{"error": err.Error()}
 	}
 
-	c.Data["json"] = images
 	c.ServeJSON()
 }
-
 func (c *CatController) GetBreeds() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
 
-	breeds, err := fetchBreeds(apiURL, apiKey)
-	if err != nil {
-		c.Data["json"] = map[string]string{"error": "Failed to fetch breeds"}
-		c.ServeJSON()
-		return
+	// Create a channel to receive breeds
+	breedChan := make(chan []Breed)
+	errorChan := make(chan error)
+
+	go fetchBreeds(apiURL, apiKey, breedChan, errorChan)
+
+	select {
+	case breeds := <-breedChan:
+		c.Data["json"] = breeds
+	case err := <-errorChan:
+		c.Data["json"] = map[string]string{"error": err.Error()}
 	}
 
-	c.Data["json"] = breeds
 	c.ServeJSON()
 }
 
@@ -83,22 +93,22 @@ func (c *CatController) GetBreedImages() {
 	apiURL, _ := web.AppConfig.String("catapi.url")
 
 	breedID := c.GetString("breed_id")
-	images, err := fetchBreedImages(apiURL, apiKey, breedID)
-	if err != nil {
-		c.Data["json"] = map[string]string{"error": "Failed to fetch breed images"}
-		c.ServeJSON()
-		return
+
+	// Create a channel to receive breed images
+	imageChan := make(chan []CatImage)
+	errorChan := make(chan error)
+
+	go fetchBreedImages(apiURL, apiKey, breedID, imageChan, errorChan)
+
+	select {
+	case images := <-imageChan:
+		c.Data["json"] = images
+	case err := <-errorChan:
+		c.Data["json"] = map[string]string{"error": err.Error()}
 	}
-	/*
-	for _, img :=  range images{
-		for  _, breed :=  range img.Breeds{
-			fmt.Println("hudai", breed.WikipediaURL)
-		}
-	}*/
-	c.Data["json"] = images
+
 	c.ServeJSON()
 }
-
 func fetchCatImage(apiURL, apiKey string) (string, error) {
 	reqURL := apiURL + "/images/search?limit=1"
 	req, _ := http.NewRequest("GET", reqURL, nil)
@@ -129,8 +139,8 @@ func fetchCatImage(apiURL, apiKey string) (string, error) {
 
 	return "", nil
 }
-
-func fetchCatImages(apiURL, apiKey string) ([]CatImage, error) {
+// Fetch Cat Images Concurrently
+func fetchCatImages(apiURL, apiKey string, imageChan chan []CatImage, errorChan chan error) {
 	reqURL := apiURL + "/images/search?limit=10"
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Add("x-api-key", apiKey)
@@ -138,26 +148,36 @@ func fetchCatImages(apiURL, apiKey string) ([]CatImage, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		errorChan <- err
+		close(imageChan)
+		close(errorChan)
+		return
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("API returned status code %d", resp.StatusCode)
+		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
+		close(imageChan)
+		close(errorChan)
+		return
 	}
 
 	var result []CatImage
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		errorChan <- err
+		close(imageChan)
+		close(errorChan)
+		return
 	}
 
-	return result, nil
+	imageChan <- result
+	close(imageChan)
+	close(errorChan)
 }
-
-func fetchBreeds(apiURL, apiKey string) ([]Breed, error) {
+// Fetch Breeds Concurrently
+func fetchBreeds(apiURL, apiKey string, breedChan chan []Breed, errorChan chan error) {
 	reqURL := apiURL + "/breeds"
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Add("x-api-key", apiKey)
@@ -165,26 +185,37 @@ func fetchBreeds(apiURL, apiKey string) ([]Breed, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		errorChan <- err
+		close(breedChan)
+		close(errorChan)
+		return
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("API returned status code %d", resp.StatusCode)
+		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
+		close(breedChan)
+		close(errorChan)
+		return
 	}
 
 	var result []Breed
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		errorChan <- err
+		close(breedChan)
+		close(errorChan)
+		return
 	}
 
-	return result, nil
+	breedChan <- result
+	close(breedChan)
+	close(errorChan)
 }
 
-func fetchBreedImages(apiURL, apiKey, breedID string) ([]CatImage, error) {
+// Fetch Breed Images Concurrently
+func fetchBreedImages(apiURL, apiKey, breedID string, imageChan chan []CatImage, errorChan chan error) {
 	reqURL := apiURL + "/images/search?breed_ids=" + breedID + "&limit=10"
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Add("x-api-key", apiKey)
@@ -192,23 +223,33 @@ func fetchBreedImages(apiURL, apiKey, breedID string) ([]CatImage, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		errorChan <- err
+		close(imageChan)
+		close(errorChan)
+		return
 	}
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("API returned status code %d", resp.StatusCode)
+		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
+		close(imageChan)
+		close(errorChan)
+		return
 	}
 
 	var result []CatImage
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		errorChan <- err
+		close(imageChan)
+		close(errorChan)
+		return
 	}
 
-	return result, nil
+	imageChan <- result
+	close(imageChan)
+	close(errorChan)
 }
 // Handle voting on a cat image
 func (c *CatController) CreateVote() {

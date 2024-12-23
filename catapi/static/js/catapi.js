@@ -12,9 +12,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const dislikeButton = document.getElementById("dislikeButton");
   const breedSearch = document.getElementById("breedSearch");
   const breedList = document.getElementById("breedList");
-  const breedDropdownContainer = document.getElementById("breedDropdownContainer");
-  const breedDropdownList = document.getElementById("breedDropdownList");
-  const breedInfoContainer = document.getElementById("breedInfoContainer");
   const breedName = document.getElementById("breedName");
   const breedOrigin = document.getElementById("breedOrigin");
   const breedDescription = document.getElementById("breedDescription");
@@ -28,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSlideIndex = 0;
   let slideInterval;
   let isTransitioning = false;
-  let selectedBreed = null;
 
 
   // Add a data attribute to store current image ID

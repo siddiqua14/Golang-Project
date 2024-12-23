@@ -33,7 +33,6 @@ body {
     border-bottom: 1px solid #f0f0f0;
 }
 
-
 .button {
     background: none;
     border: none;
@@ -51,9 +50,11 @@ body {
     background: none;
     color: #ff4444;
 }
+
 .button:hover {
     transform: scale(1.1);
 }
+
 .tab-content {
     flex: 1;
     overflow: hidden;
@@ -65,7 +66,6 @@ body {
     flex-direction: column;
 }
 
-
 .cat-card {
     flex-grow: 1;
     /* Ensures it takes all the remaining space within the container */
@@ -73,7 +73,6 @@ body {
     flex-direction: column;
     gap: 20px;
     height: fit-content;
-    /* Allows the content inside to scroll if it overflows */
 }
 
 .layout {
@@ -120,7 +119,6 @@ img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Ensures images fit their container */
     border-radius: 10px;
     transition: opacity 0.5s ease-in-out;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -143,14 +141,10 @@ img {
     border-radius: 50%;
 }
 
-
-
-
 /* Smooth fade effect */
 .fade-out {
     opacity: 0;
 }
-
 
 /* Dropdown container */
 .dropdown {
@@ -161,56 +155,58 @@ img {
     border-radius: 5px;
 }
 
-.dropdown-container {
+/* Breed information container modifications */
+#breedInfoContainer {
     position: relative;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 60px);
+    
+}
+/* Ensure the container doesn't expand */
+#breedSearchContainer {
+    position: relative;
 }
 
-.dropdown-list {
-    position: absolute;
-    top: 100%;
+.breed-image-container {
+    flex: 1;
     width: 100%;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    max-height: 200px;
-    overflow-y: auto;
+    min-height: 200px;
+    max-height: 60%;
+    margin: 0;
+    border-radius: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.breed-image {
+    width: 100%;
+    height: 250px;
+    object-fit: contain;
     display: none;
-    /* Hidden by default */
-    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
 }
 
-.dropdown-list li {
-    padding: 10px;
-    cursor: pointer;
+.breed-image.active {
+    display: block;
+    opacity: 1;
 }
 
-.dropdown-list li:hover,
-.dropdown-list li.selected {
-    background-color: #f0f0f0;
-}
-
-/* Breed information styles */
-.breed-info {
-    padding: 15px;
-}
 
 #breedList {
     position: absolute;
     z-index: 10;
     top: 100%;
-    /* Aligns directly below the search bar */
     left: 0;
     width: 100%;
-    /* Matches the width of the search bar's container */
     background-color: white;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     border: 1px solid #ddd;
     max-height: 200px;
-    /* Limit dropdown height */
     overflow-y: auto;
-    /* Scrollable if the list exceeds max-height */
     display: none;
-    /* Hidden by default */
 }
 
 .breed-item {
@@ -223,39 +219,7 @@ img {
     background-color: #f7f7f7;
 }
 
-/* Ensure the container doesn't expand */
-#breedSearchContainer {
-    position: relative;
-}
 
-
-
-.breed-image-container {
-    position: relative;
-    width: 50%;
-    height: 200px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    margin-left: auto;
-    margin-right: auto;
-    overflow: hidden;
-    flex-shrink: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.breed-image {
-    display: none;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-    object-fit: cover;
-}
-
-.breed-image.active {
-    display: block;
-    opacity: 1;
-}
 
 /* Slider Wrapper */
 .slider-wrapper {
@@ -305,7 +269,10 @@ img {
 .slide-transition {
     transition: transform 0.3s ease-in-out;
 }
-
+/* Breed information styles */
+.breed-info {
+    padding: 15px;
+}
 .breed-title {
     font-size: 24px;
     margin-bottom: 5px;
@@ -412,7 +379,7 @@ img {
     max-height: 400px;
     object-fit: contain;
     border-radius: 10px;
-   
+
 }
 
 /* Favorite Images Styling */
@@ -425,12 +392,10 @@ img {
 
 /* Favorite Images Section */
 #favoriteImagesContainer {
-   
+
     flex-grow: 1;
     /* Takes up remaining space in .container */
-    max-height: calc(100vh - 250px);
-    /* Ensures it fits within the container */
-
+    height: 475px;
     overflow-y: auto;
     /* Enables scrolling for vertical overflow */
     overflow-x: hidden;
