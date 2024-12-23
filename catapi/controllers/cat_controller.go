@@ -48,25 +48,25 @@ func (c *CatController) GetCatImage() {
 	c.TplName = "index.tpl"
 }
 
-
+// Modify the GetCatImagesAPI to fetch 10 images
 func (c *CatController) GetCatImagesAPI() {
-	apiKey, _ := web.AppConfig.String("catapi.key")
-	apiURL, _ := web.AppConfig.String("catapi.url")
+    apiKey, _ := web.AppConfig.String("catapi.key")  // Using regular variable declaration
+    apiURL, _ := web.AppConfig.String("catapi.url")  // Using regular variable declaration
 
-	// Create a channel to receive cat images
-	imageChan := make(chan []CatImage)
-	errorChan := make(chan error)
+    // Create a channel to receive cat images
+    imageChan := make(chan []CatImage)
+    errorChan := make(chan error)
 
-	go fetchCatImages(apiURL, apiKey, imageChan, errorChan)
+    go fetchCatImages(apiURL, apiKey, imageChan, errorChan)
 
-	select {
-	case images := <-imageChan:
-		c.Data["json"] = images
-	case err := <-errorChan:
-		c.Data["json"] = map[string]string{"error": err.Error()}
-	}
+    select {
+    case images := <-imageChan:
+        c.Data["json"] = images
+    case err := <-errorChan:
+        c.Data["json"] = map[string]string{"error": err.Error()}
+    }
 
-	c.ServeJSON()
+    c.ServeJSON()
 }
 func (c *CatController) GetBreeds() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
@@ -139,42 +139,42 @@ func fetchCatImage(apiURL, apiKey string) (string, error) {
 
 	return "", nil
 }
-// Fetch Cat Images Concurrently
+// Fetch 10 Cat Images Concurrently
 func fetchCatImages(apiURL, apiKey string, imageChan chan []CatImage, errorChan chan error) {
-	reqURL := apiURL + "/images/search?limit=10"
-	req, _ := http.NewRequest("GET", reqURL, nil)
-	req.Header.Add("x-api-key", apiKey)
+    reqURL := apiURL + "/images/search?limit=10"
+    req, _ := http.NewRequest("GET", reqURL, nil)
+    req.Header.Add("x-api-key", apiKey)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		errorChan <- err
-		close(imageChan)
-		close(errorChan)
-		return
-	}
-	defer resp.Body.Close()
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        errorChan <- err
+        close(imageChan)
+        close(errorChan)
+        return
+    }
+    defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
-		close(imageChan)
-		close(errorChan)
-		return
-	}
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 200 {
+        errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
+        close(imageChan)
+        close(errorChan)
+        return
+    }
 
-	var result []CatImage
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		errorChan <- err
-		close(imageChan)
-		close(errorChan)
-		return
-	}
+    var result []CatImage
+    err = json.Unmarshal(body, &result)
+    if err != nil {
+        errorChan <- err
+        close(imageChan)
+        close(errorChan)
+        return
+    }
 
-	imageChan <- result
-	close(imageChan)
-	close(errorChan)
+    imageChan <- result
+    close(imageChan)
+    close(errorChan)
 }
 // Fetch Breeds Concurrently
 func fetchBreeds(apiURL, apiKey string, breedChan chan []Breed, errorChan chan error) {
@@ -348,7 +348,6 @@ func (c *CatController) GetVotes() {
 	c.ServeJSON()
 }
 
-// Handle favoriting a cat image
 func (c *CatController) CreateFavorite() {
     apiKey, _ := web.AppConfig.String("catapi.key")
     apiURL, _ := web.AppConfig.String("catapi.url")
@@ -392,7 +391,6 @@ func (c *CatController) CreateFavorite() {
     c.Data["json"] = map[string]string{"status": "success"}
     c.ServeJSON()
 }
-
 // Handle fetching favorite cat images
 func (c *CatController) GetFavorites() {
     apiKey, _ := web.AppConfig.String("catapi.key")
@@ -430,5 +428,53 @@ func (c *CatController) GetFavorites() {
     }
 
     c.Data["json"] = result
+    c.ServeJSON()
+}
+// Handle deleting a favorite cat image
+func (c *CatController) DeleteFavorite() {
+    // Get favorite ID from URL parameter
+    favoriteId := c.Ctx.Input.Param(":id")
+    
+    // Get API configuration
+    apiKey, _ := web.AppConfig.String("catapi.key")
+    apiURL, _ := web.AppConfig.String("catapi.url")
+    
+    // Construct delete request
+    reqURL := fmt.Sprintf("%s/favourites/%s", apiURL, favoriteId)
+    req, err := http.NewRequest("DELETE", reqURL, nil)
+    if err != nil {
+        c.Data["json"] = map[string]string{"error": "Failed to create delete request"}
+        c.Ctx.ResponseWriter.WriteHeader(500)
+        c.ServeJSON()
+        return
+    }
+    
+    // Set API key header
+    req.Header.Set("x-api-key", apiKey)
+    
+    // Send request
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        c.Data["json"] = map[string]string{"error": "Failed to delete favorite"}
+        c.Ctx.ResponseWriter.WriteHeader(500)
+        c.ServeJSON()
+        return
+    }
+    defer resp.Body.Close()
+    
+    // Check response
+    if resp.StatusCode != 200 {
+        body, _ := ioutil.ReadAll(resp.Body)
+        var result map[string]interface{}
+        json.Unmarshal(body, &result)
+        c.Data["json"] = map[string]string{"error": fmt.Sprintf("Failed to delete favorite: %v", result)}
+        c.Ctx.ResponseWriter.WriteHeader(resp.StatusCode)
+        c.ServeJSON()
+        return
+    }
+    
+    // Return success response
+    c.Data["json"] = map[string]string{"message": "Favorite deleted successfully"}
     c.ServeJSON()
 }

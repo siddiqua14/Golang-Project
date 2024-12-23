@@ -14,5 +14,8 @@ func init() {
 	web.Router("/api/breeds", &controllers.CatController{}, "get:GetBreeds")
 	web.Router("/api/breed-images", &controllers.CatController{}, "get:GetBreedImages")
 	web.Router("/createFavorite", &controllers.CatController{}, "post:CreateFavorite")
-    web.Router("/getFavorites", &controllers.CatController{}, "get:GetFavorites")
+	web.Router("/getFavorites", &controllers.CatController{}, "get:GetFavorites")
+	web.Router("/deleteFavorite/:id", &controllers.CatController{}, "delete:DeleteFavorite")
+
+
 }

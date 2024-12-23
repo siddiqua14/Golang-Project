@@ -5,13 +5,16 @@
     <meta charset="UTF-8">
     <title>Cat Voting</title>
     <link rel="stylesheet" href="/static/css/catapi.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <script src="/static/js/catapi.js" defer></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
 </head>
 
 <body>
-    <div class="container">
+    <div class="Cat-container">
         <div class="button-container" id="catTabs" role="tablist">
 
             <button id="votingButton" class="button" title="Voting" onclick="showVotingLayout()" data-bs-toggle="tab"
@@ -30,7 +33,8 @@
                 </svg>
                 Breeds</button>
 
-            <button id="favButton" class="button" title="Favorite" onclick="showFavoriteLayout()">❤️</button>
+            <button id="favButton" class="button" title="Favorite" onclick="showFavoriteLayout()" data-bs-toggle="tab"
+                data-bs-target="#breeds" type="button"><i class='far fa-heart'></i>Favs</button>
         </div>
 
         <!-- Main Card Container -->
@@ -44,9 +48,12 @@
                     {{end}}
                 </div>
                 <div class="vote-buttons">
-                    <button id="heartButton" class="button" title="Favorite">❤️</button>
-                    <button id="likeButton" class="button" title="Like">👍</button>
-                    <button id="dislikeButton" class="button" title="Dislike">👎</button>
+                    <button id="heartButton" class="button" title="Favorite"><i class="far fa-heart"
+                            style="font-size:24px"></i></button>
+                    <button id="likeButton" class="button" title="Like"><i class="far fa-thumbs-up"
+                            style="font-size:24px"></i></button>
+                    <button id="dislikeButton" class="button" title="Dislike"><i class="far fa-thumbs-down"
+                            style="font-size:24px"></i></button>
                 </div>
             </div>
 
@@ -89,7 +96,7 @@
 
             <!-- Favorite Layout (Initially Hidden) -->
             <div id="favoriteLayout" class="layout">
-                <div class="layout-controls">
+                <div class="layout-controls d-flex gap-3 mb-3">
                     <button id="gridBtn" class="layout-btn grid-btn active">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -109,12 +116,13 @@
                     </button>
                 </div>
                 <div id="favoriteImagesContainer" class="grid-layout">
+                    <button class="delete-btn">×</button>
                     <!-- Images will be added here -->
                 </div>
             </div>
         </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

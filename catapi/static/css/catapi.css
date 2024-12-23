@@ -6,7 +6,7 @@
 
 body {
     font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
+    background-color: #e4e4e4;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -14,14 +14,13 @@ body {
     padding: 20px;
 }
 
-.container {
+.Cat-container {
     background: white;
     max-width: 600px;
     width: 100%;
-    height: 600px;
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.219);
     display: flex;
     flex-direction: column;
 }
@@ -68,11 +67,9 @@ body {
 
 .cat-card {
     flex-grow: 1;
-    /* Ensures it takes all the remaining space within the container */
     display: flex;
     flex-direction: column;
     gap: 20px;
-    height: fit-content;
 }
 
 .layout {
@@ -106,7 +103,7 @@ body {
 
 .image-container {
     width: 100%;
-    height: 400px;
+    height: 350px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -118,7 +115,7 @@ body {
 img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 10px;
     transition: opacity 0.5s ease-in-out;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -161,11 +158,36 @@ img {
     display: flex;
     flex-direction: column;
     height: calc(100% - 60px);
-    
+
 }
+
 /* Ensure the container doesn't expand */
 #breedSearchContainer {
     position: relative;
+}
+
+#breedList {
+    position: absolute;
+    z-index: 10;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.breed-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ddd;
+}
+
+.breed-item:hover {
+    background-color: #f7f7f7;
 }
 
 .breed-image-container {
@@ -193,33 +215,6 @@ img {
     display: block;
     opacity: 1;
 }
-
-
-#breedList {
-    position: absolute;
-    z-index: 10;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid #ddd;
-    max-height: 200px;
-    overflow-y: auto;
-    display: none;
-}
-
-.breed-item {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #ddd;
-}
-
-.breed-item:hover {
-    background-color: #f7f7f7;
-}
-
-
 
 /* Slider Wrapper */
 .slider-wrapper {
@@ -269,10 +264,12 @@ img {
 .slide-transition {
     transition: transform 0.3s ease-in-out;
 }
+
 /* Breed information styles */
 .breed-info {
     padding: 15px;
 }
+
 .breed-title {
     font-size: 24px;
     margin-bottom: 5px;
@@ -308,23 +305,12 @@ img {
 .grid-layout {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 10px;
     width: 100%;
     max-height: calc(100% - 40px);
     /* Ensures space for layout controls */
     overflow-y: auto;
-    /* Enables scrolling for grid images */
     padding: 5px;
-    /* Adds padding for the scrollbar */
 }
-
-/* Grid Layout - 3 columns 
-.grid-layout {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    width: 100%;
-}*/
 
 
 .grid-layout .favorite-image {
@@ -366,10 +352,8 @@ img {
 .list-layout {
     display: flex;
     flex-direction: column;
-    gap: 5px;
     max-height: calc(100% - 40px);
     overflow-y: auto;
-    /* Enables scrolling for list images */
 }
 
 
@@ -382,30 +366,25 @@ img {
 
 }
 
-/* Favorite Images Styling */
+/* Favorite image styling */
 .favorite-image {
-    border-radius: 4px;
-    background-color: #f8f8f8;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
 }
 
-/* Container with vertical scroll */
 
-/* Favorite Images Section */
 #favoriteImagesContainer {
 
     flex-grow: 1;
     /* Takes up remaining space in .container */
     height: 475px;
     overflow-y: auto;
-    /* Enables scrolling for vertical overflow */
     overflow-x: hidden;
-    /* Prevents horizontal overflow */
     padding-right: 5px;
-    /* Compensates for scrollbar */
     margin-top: 20px;
-    /* Adds spacing from other elements */
     box-sizing: border-box;
-    /* Includes padding in the height */
 }
 
 /* Custom scrollbar */
@@ -421,4 +400,48 @@ img {
 #favoriteImagesContainer::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 3px;
+}
+
+.favorite-card:hover {
+    transform: translateY(-5px);
+}
+
+.favorite-image {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.image-container:hover .favorite-image {
+    transform: scale(1.02);
+}
+
+.delete-btn {
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #dc3545;
+    color: white;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+    transform: scale(1.1);
 }
