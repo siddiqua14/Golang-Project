@@ -16,6 +16,4 @@ func init() {
 	web.Router("/createFavorite", &controllers.CatController{}, "post:CreateFavorite")
 	web.Router("/getFavorites", &controllers.CatController{}, "get:GetFavorites")
 	web.Router("/deleteFavorite/:id", &controllers.CatController{}, "delete:DeleteFavorite")
-
-
 }

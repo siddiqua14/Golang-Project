@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const breedSearch = document.getElementById("breedSearch");
   const breedList = document.getElementById("breedList");
   const breedName = document.getElementById("breedName");
+  const breedId= document.getElementById("breedId");
   const breedOrigin = document.getElementById("breedOrigin");
   const breedDescription = document.getElementById("breedDescription");
   const breedWiki = document.getElementById("breedWiki");
@@ -372,6 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
     breedSearch.value = breed.name; // Set breed name in the input field
     breedList.style.display = "none"; // Close the dropdown
 
+    breedId.textContent = breed.id;
     breedName.textContent = breed.name;
     breedDescription.textContent = breed.description;
     breedOrigin.textContent = breed.origin;
@@ -421,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     slideInterval = setInterval(() => {
       const nextIndex = (currentSlideIndex + 1) % totalSlides;
       goToSlide(nextIndex);
-    }, 2000); // Change slide every 3 seconds
+    }, 3000); // Change slide every 3 seconds
   }
 
   function goToSlide(index) {

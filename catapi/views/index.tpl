@@ -162,8 +162,11 @@
                     <div class="slider-indicators" id="sliderIndicators"></div>
 
                     <div class="breed-info">
-                        <h2 id="breedName" class="breed-name">Breed Name</h2>
-                        <p id="breedOrigin" class="breed-origin">Origin: Unknown</p>
+                        <h2 class="breed-name">
+                        <span id="breedName" class="breed-name">Breed Name</span>
+                        <span id="breedOrigin" class="breed-origin"> </span>
+                        <span class="breed-id" id="breedId"> </span>
+                    </h2>
                         <p id="breedDescription" class="breed-description">
                             Description: Lorem ipsum dolor sit amet, consectetur adipiscing elit.
                         </p>
