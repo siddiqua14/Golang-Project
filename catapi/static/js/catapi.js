@@ -25,41 +25,74 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSlideIndex = 0;
   let slideInterval;
   let isTransitioning = false;
-  let catImages = [];
+  let lastImageId = ""; // Keep track of the last displayed image ID
 
   // Add a data attribute to store current image ID
   if (!catImage.hasAttribute('data-image-id')) {
     catImage.setAttribute('data-image-id', '');
   }
 
-  votingButton.addEventListener("click", function() {
+  votingButton.addEventListener("click", function () {
     // Add active class to the voting button (Bootstrap's active class)
     votingButton.classList.add("active");
     fetchNewCatImage();  // Fetch new images when the voting layout is shown
   });
 
   async function fetchNewCatImage() {
+    const loadingImage = document.getElementById("loadingImage");
+  
     try {
+      loadingImage.style.display = "block";
+      catImage.style.display = "none";
+
       const response = await fetch("/");
       const html = await response.text();
-
-      // Create a temporary div to parse the HTML
+  
+      // Parse the HTML to get the new image URL
       const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+      const doc = parser.parseFromString(html, "text/html");
       const newImageSrc = doc.getElementById("catImage").src;
-
+  
+      // Extract the new image ID from the URL
+      const newImageId = newImageSrc.split("/").pop().split(".")[0];
+  
+      // Check if the new image is the same as the current one
+      if (newImageId === lastImageId) {
+        console.warn("Fetched image is the same as the current image. Fetching again...");
+        return fetchNewCatImage(); // Retry fetching a new image
+      }
+  
       console.log("Fetched new image:", newImageSrc);
-
-      // Extract image ID from URL
-      const imageId = newImageSrc.split('/').pop().split('.')[0];
-      console.log("New image ID:", imageId);
-
-      catImageContainer.classList.add("fade-out");
-      setTimeout(() => {
-        catImage.src = newImageSrc;
-        catImage.setAttribute('data-image-id', imageId);
-        catImageContainer.classList.remove("fade-out");
-      }, 500);
+      console.log("New image ID:", newImageId);
+  
+      // Preload the new image before displaying it
+      const img = new Image();
+      img.src = newImageSrc;
+  
+      img.onload = () => {
+        // Update the lastImageId to the new image ID
+        lastImageId = newImageId;
+        loadingImage.style.display = "none";
+        // Apply fade-out animation to the container
+        catImageContainer.classList.add("fade-out");
+  
+        setTimeout(() => {
+          // Update the image and remove the fade-out class
+          catImage.src = newImageSrc;
+          catImage.setAttribute("data-image-id", newImageId);
+          catImage.style.display = "block";
+          catImageContainer.classList.remove("fade-out");
+          catImageContainer.classList.add("fade-in");
+          setTimeout(() => {
+            catImageContainer.classList.remove("fade-in");
+          }, 300);
+        }, 300); // Matches the fade-out animation duration
+      };
+  
+      img.onerror = () => {
+        console.error("Failed to preload the image. Retrying...");
+        fetchNewCatImage(); // Retry fetching if the image fails to load
+      };
     } catch (error) {
       console.error("Error fetching image:", error);
     }
@@ -169,52 +202,94 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   // Frontend JavaScript
   function displayFavoriteImages(favoriteImages) {
-    favoriteImagesContainer.innerHTML = ""; // Clear the container
+    // Clear the container before appending new images
+    favoriteImagesContainer.innerHTML = "";
 
     favoriteImages.forEach((favorite) => {
       if (favorite.image && favorite.image.url) {
-        // Create wrapper div for image and delete button
+        // Create a wrapper div for the image and delete button
         const wrapper = document.createElement("div");
         wrapper.className = "position-relative d-inline-block m-2";
 
-        // Create image element
+        // Create an img element for the cat image
         const img = document.createElement("img");
         img.src = favorite.image.url;
         img.className = "favorite-image";
         img.alt = "Cat image";
 
-        // Create delete button
+        // Create a delete button for each favorite
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
-        deleteBtn.innerHTML = "×";
-      
+        deleteBtn.textContent = "×";
 
-        // Add click handler for delete
+        // Delete favorite image on button click
         deleteBtn.onclick = async () => {
           try {
             const response = await fetch(`/deleteFavorite/${favorite.id}`, {
-              method: 'DELETE'
+              method: "DELETE",
             });
 
             if (response.ok) {
               wrapper.remove(); // Remove the image and button from DOM
             } else {
-              alert('Failed to delete favorite');
+              alert("Failed to delete favorite");
             }
           } catch (error) {
-            console.error('Error:', error);
-            alert('Failed to delete favorite');
+            console.error("Error:", error);
+            alert("Failed to delete favorite");
           }
         };
 
-        // Add image and button to wrapper
+        // Append the image and delete button to the wrapper
         wrapper.appendChild(img);
         wrapper.appendChild(deleteBtn);
+
+        // Append the wrapper to the container
         favoriteImagesContainer.appendChild(wrapper);
       }
     });
   }
-  
+
+  // Function to fetch favorite images from the API
+  async function fetchFavoriteImages() {
+    try {
+      const response = await fetch("/getFavorites");
+      const data = await response.json();
+
+      if (response.ok) {
+        // Display favorite images
+        displayFavoriteImages(data);
+      } else {
+        console.error("Failed to fetch favorites:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching favorite images:", error);
+    }
+  }
+  // Show the favorite layout
+  window.showFavoriteLayout = async function () {
+    try {
+      // Fetch favorite images from the API
+      const response = await fetch("/getFavorites");
+      const data = await response.json();
+
+      if (response.ok && data.length > 0) {
+        // Display favorite images
+        displayFavoriteImages(data);
+
+        // Show the favorite layout and hide others
+        document.getElementById("favoriteLayout").style.display = "block";
+        document.getElementById("votingLayout").style.display = "none";
+        document.getElementById("breedLayout").style.display = "none";
+      } else {
+        // Handle case where there are no favorite images
+        favoriteImagesContainer.innerHTML = "<p>No favorite images yet.</p>";
+      }
+    } catch (error) {
+      console.error("Error fetching favorite images:", error);
+      alert("Failed to load favorite images. Please try again.");
+    }
+  };
 
   // Function to add an image to favorites via the API
   async function addToFavorites(imageId) {
@@ -235,71 +310,22 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       console.log("Image added to favorites successfully");
+      await fetchFavoriteImages(); // Update favorite images list
     } catch (error) {
       console.error("Error adding to favorites:", error);
     }
   }
 
-  // Function to fetch the favorite images from the API
-  async function fetchFavoriteImages() {
-    try {
-      const response = await fetch("/getFavorites");
-      const data = await response.json();
 
-      if (response.ok) {
-        // Display the favorite images
-        displayFavoriteImages(data);
-      } else {
-        console.error("Failed to fetch favorites:", data.error);
-      }
-    } catch (error) {
-      console.error("Error fetching favorite images:", error);
-    }
-  }
 
 
   window.showVotingLayout = function () {
     document.getElementById("votingLayout").style.display = "block";
     document.getElementById("breedLayout").style.display = "none";
     document.getElementById("favoriteLayout").style.display = "none";
-    
+
   };
 
-  window.showFavoriteLayout = async function () {
-    try {
-      // Fetch favorite images from the API
-      const response = await fetch("/getFavorites");
-      const data = await response.json();
-
-      if (response.ok && data.length > 0) {
-        // Clear the container before adding new images
-        favoriteImagesContainer.innerHTML = "";
-        displayFavoriteImages(data);
-        // Iterate over the favorite images and create img elements
-        data.forEach((favorite) => {
-          if (favorite.image && favorite.image.url) {
-            const img = document.createElement("img");
-            img.src = favorite.image.url; // Use the image URL from the API response
-            img.alt = "Favorite Cat Image";
-            img.classList.add("favorite-image");
-            favoriteImagesContainer.appendChild(img);
-          }
-        });
-
-        // Show the favorite layout and hide others
-        document.getElementById("favoriteLayout").style.display = "block";
-        document.getElementById("votingLayout").style.display = "none";
-        document.getElementById("breedLayout").style.display = "none";
-      } else {
-        // Handle case where there are no favorite images
-        favoriteImagesContainer.innerHTML = "";
-        alert("No favorite images yet.");
-      }
-    } catch (error) {
-      console.error("Error fetching favorite images:", error);
-      alert("Failed to load favorite images. Please try again.");
-    }
-  };
 
   async function fetchBreeds() {
     try {

@@ -37,7 +37,7 @@ body {
     border: none;
     padding: 8px 12px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 20px;
     color: #666;
     display: flex;
     align-items: center;
@@ -118,30 +118,38 @@ img {
     object-fit: contain;
     border-radius: 10px;
     transition: opacity 0.5s ease-in-out;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 
 .vote-buttons {
     display: flex;
-    justify-content: center;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+}
+
+.right-buttons {
+    display: flex;
+    gap: 8px;
 }
 
 .vote-buttons .button {
-    font-size: 20px;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: none;
     border-radius: 50%;
+    cursor: pointer;
+    padding: 4px;
 }
 
-/* Smooth fade effect */
-.fade-out {
-    opacity: 0;
+.vote-buttons .button svg {
+    width: 24px;
+    height: 24px;
+    transition: all 0.2s ease;
 }
+
+
 
 /* Dropdown container */
 .dropdown {
@@ -187,7 +195,7 @@ img {
 }
 
 .breed-item:hover {
-    background-color: #f7f7f7;
+    background-color: #b8d8ee;
 }
 
 .breed-image-container {
@@ -344,7 +352,7 @@ img {
 }
 
 .layout-btn.active svg {
-    fill: #fa9759;
+    fill: #000;
 }
 
 
@@ -444,4 +452,47 @@ img {
 .delete-btn:hover {
     background-color: #c82333;
     transform: scale(1.1);
+}
+
+/* Loading Image */
+#loadingImage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    /* Adjust size as needed */
+    height: 50px;
+    display: none;
+    /* Hidden by default */
+    z-index: 1;
+}
+
+/* Fade Animations */
+#loadingImage img.fade-out {
+    animation: fadeOut 0.3s forwards;
+}
+
+#loadingImage img.fade-in {
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
