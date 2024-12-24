@@ -49,3 +49,6 @@ Once the dependencies are correctly resolved, you can try running your applicati
 bash
 Copy code
 bee run
+
+go get github.com/stretchr/testify
+go get github.com/jarcoal/httpmock
