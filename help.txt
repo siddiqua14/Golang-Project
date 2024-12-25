@@ -51,4 +51,18 @@ Copy code
 bee run
 
 go get github.com/stretchr/testify
+
 go get github.com/jarcoal/httpmock
+go get github.com/stretchr/testify/assert
+go get github.com/beego/beego/v2/testing
+
+go get github.com/stretchr/testify/mock@v1.10.0
+go get github.com/stretchr/objx@v0.5.2
+go mod tidy
+
+go install golang.org/x/tools/cmd/cover@latest
+
+
+this 
+go test -coverprofile coverage.out ./...
+go tool cover -html coverage.out

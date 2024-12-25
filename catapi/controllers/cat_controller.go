@@ -9,10 +9,33 @@ import (
 	"github.com/beego/beego/v2/server/web"
 	
 )
+type HTTPClient interface {
+    Do(req *http.Request) (*http.Response, error)
+}
 
 type CatController struct {
 	web.Controller
+	httpClient HTTPClient
 }
+// SetHTTPClient allows injection of mock client for testing
+func (c *CatController) SetHTTPClient(client HTTPClient) {
+    c.httpClient = client
+}
+
+// getHTTPClient returns the http client to use
+func (c *CatController) getHTTPClient() HTTPClient {
+    if c.httpClient != nil {
+        return c.httpClient
+    }
+    return &http.Client{} // default client
+}
+
+type MockHTTPClient struct {
+    DoFunc func(req *http.Request) (*http.Response, error)
+}
+
+
+
 type CatImage struct {
 	ID        string   `json:"id"`
 	URL       string   `json:"url"`
@@ -35,11 +58,15 @@ type Breed struct {
 	WikipediaURL string `json:"wikipedia_url"`
 }
 
+// Modify GetCatImage to use the new signature of FetchCatImage
 func (c *CatController) GetCatImage() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
 
-	imageURL, err := fetchCatImage(apiURL, apiKey)
+	client := &http.Client{} // Create an HTTP client
+
+	// Use the client in the FetchCatImage call
+	imageURL, err := FetchCatImage(client, apiURL, apiKey)
 	if err != nil {
 		c.Data["CatImage"] = ""
 	} else {
@@ -48,26 +75,30 @@ func (c *CatController) GetCatImage() {
 	c.TplName = "index.tpl"
 }
 
-// Modify the GetCatImagesAPI to fetch 10 images
+// Modify GetCatImagesAPI to use the new signature of FetchCatImages
 func (c *CatController) GetCatImagesAPI() {
-    apiKey, _ := web.AppConfig.String("catapi.key")  // Using regular variable declaration
-    apiURL, _ := web.AppConfig.String("catapi.url")  // Using regular variable declaration
+	apiKey, _ := web.AppConfig.String("catapi.key")
+	apiURL, _ := web.AppConfig.String("catapi.url")
 
-    // Create a channel to receive cat images
-    imageChan := make(chan []CatImage)
-    errorChan := make(chan error)
+	client := &http.Client{} // Create an HTTP client
 
-    go fetchCatImages(apiURL, apiKey, imageChan, errorChan)
+	// Create a channel to receive cat images
+	imageChan := make(chan []CatImage)
+	errorChan := make(chan error)
 
-    select {
-    case images := <-imageChan:
-        c.Data["json"] = images
-    case err := <-errorChan:
-        c.Data["json"] = map[string]string{"error": err.Error()}
-    }
+	// Use the client in the FetchCatImages call
+	go FetchCatImages(client, apiURL, apiKey, imageChan, errorChan)
 
-    c.ServeJSON()
+	select {
+	case images := <-imageChan:
+		c.Data["json"] = images
+	case err := <-errorChan:
+		c.Data["json"] = map[string]string{"error": err.Error()}
+	}
+
+	c.ServeJSON()
 }
+// Update the caller to pass an HTTP client
 func (c *CatController) GetBreeds() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
@@ -76,7 +107,7 @@ func (c *CatController) GetBreeds() {
 	breedChan := make(chan []Breed)
 	errorChan := make(chan error)
 
-	go fetchBreeds(apiURL, apiKey, breedChan, errorChan)
+	go FetchBreeds(apiURL, apiKey, &http.Client{}, breedChan, errorChan) // Use FetchBreeds here
 
 	select {
 	case breeds := <-breedChan:
@@ -88,6 +119,7 @@ func (c *CatController) GetBreeds() {
 	c.ServeJSON()
 }
 
+// GetBreedImages retrieves images for a specific breed
 func (c *CatController) GetBreedImages() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
@@ -98,7 +130,11 @@ func (c *CatController) GetBreedImages() {
 	imageChan := make(chan []CatImage)
 	errorChan := make(chan error)
 
-	go fetchBreedImages(apiURL, apiKey, breedID, imageChan, errorChan)
+	// Use a real HTTP client in production
+	client := &http.Client{}
+
+	// Use the exported FetchBreedImages function
+	go FetchBreedImages(apiURL, apiKey, breedID, client, imageChan, errorChan)
 
 	select {
 	case images := <-imageChan:
@@ -109,12 +145,12 @@ func (c *CatController) GetBreedImages() {
 
 	c.ServeJSON()
 }
-func fetchCatImage(apiURL, apiKey string) (string, error) {
+// Modify FetchCatImage to accept an *http.Client argument for testing
+func FetchCatImage(client *http.Client, apiURL, apiKey string) (string, error) {
 	reqURL := apiURL + "/images/search?limit=1"
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Add("x-api-key", apiKey)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -139,54 +175,17 @@ func fetchCatImage(apiURL, apiKey string) (string, error) {
 
 	return "", nil
 }
-// Fetch 10 Cat Images Concurrently
-func fetchCatImages(apiURL, apiKey string, imageChan chan []CatImage, errorChan chan error) {
-    reqURL := apiURL + "/images/search?limit=10"
-    req, _ := http.NewRequest("GET", reqURL, nil)
-    req.Header.Add("x-api-key", apiKey)
 
-    client := &http.Client{}
-    resp, err := client.Do(req)
-    if err != nil {
-        errorChan <- err
-        close(imageChan)
-        close(errorChan)
-        return
-    }
-    defer resp.Body.Close()
-
-    body, _ := ioutil.ReadAll(resp.Body)
-    if resp.StatusCode != 200 {
-        errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
-        close(imageChan)
-        close(errorChan)
-        return
-    }
-
-    var result []CatImage
-    err = json.Unmarshal(body, &result)
-    if err != nil {
-        errorChan <- err
-        close(imageChan)
-        close(errorChan)
-        return
-    }
-
-    imageChan <- result
-    close(imageChan)
-    close(errorChan)
-}
-// Fetch Breeds Concurrently
-func fetchBreeds(apiURL, apiKey string, breedChan chan []Breed, errorChan chan error) {
-	reqURL := apiURL + "/breeds"
+// Modify FetchCatImages to accept an *http.Client argument for testing
+func FetchCatImages(client *http.Client, apiURL, apiKey string, imageChan chan []CatImage, errorChan chan error) {
+	reqURL := apiURL + "/images/search?limit=10"
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Add("x-api-key", apiKey)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		errorChan <- err
-		close(breedChan)
+		close(imageChan)
 		close(errorChan)
 		return
 	}
@@ -195,32 +194,69 @@ func fetchBreeds(apiURL, apiKey string, breedChan chan []Breed, errorChan chan e
 	body, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
-		close(breedChan)
+		close(imageChan)
 		close(errorChan)
 		return
 	}
 
-	var result []Breed
+	var result []CatImage
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		errorChan <- err
-		close(breedChan)
+		close(imageChan)
 		close(errorChan)
 		return
 	}
 
-	breedChan <- result
-	close(breedChan)
+	imageChan <- result
+	close(imageChan)
 	close(errorChan)
 }
 
+// Fetch Breeds Concurrently
+func FetchBreeds(apiURL, apiKey string, client HTTPClient, breedChan chan []Breed, errorChan chan error) {
+    reqURL := apiURL + "/breeds"
+    req, _ := http.NewRequest("GET", reqURL, nil)
+    req.Header.Add("x-api-key", apiKey)
+
+    resp, err := client.Do(req)
+    if err != nil {
+        errorChan <- err
+        close(breedChan)
+        close(errorChan)
+        return
+    }
+    defer resp.Body.Close()
+
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 200 {
+        errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
+        close(breedChan)
+        close(errorChan)
+        return
+    }
+
+    var result []Breed
+    err = json.Unmarshal(body, &result)
+    if err != nil {
+        errorChan <- err
+        close(breedChan)
+        close(errorChan)
+        return
+    }
+
+    breedChan <- result
+    close(breedChan)
+    close(errorChan)
+}
+
 // Fetch Breed Images Concurrently
-func fetchBreedImages(apiURL, apiKey, breedID string, imageChan chan []CatImage, errorChan chan error) {
+
+func FetchBreedImages(apiURL, apiKey, breedID string, client HTTPClient, imageChan chan []CatImage, errorChan chan error) {
 	reqURL := apiURL + "/images/search?breed_ids=" + breedID + "&limit=10"
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Add("x-api-key", apiKey)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		errorChan <- err
@@ -280,7 +316,7 @@ func (c *CatController) CreateVote() {
 	req.Header.Set("x-api-key", apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{}
+	client := c.getHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		errMsg := fmt.Sprintf("Failed to create vote: %v", err)
@@ -317,7 +353,7 @@ func (c *CatController) GetVotes() {
 	req, _ := http.NewRequest("GET", reqURL, nil)
 	req.Header.Set("x-api-key", apiKey)
 
-	client := &http.Client{}
+	client := c.getHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		c.Data["json"] = map[string]string{"error": "Failed to fetch votes"}
@@ -361,14 +397,22 @@ func (c *CatController) CreateFavorite() {
         c.ServeJSON()
         return
     }
-
+	if favorite.ImageID == "" {
+        c.Data["json"] = map[string]string{"error": "image_id is required"}
+        c.Ctx.ResponseWriter.WriteHeader(400)
+        c.ServeJSON()
+        return
+    }
     reqURL := fmt.Sprintf("%s/favourites", apiURL)
     jsonData, _ := json.Marshal(favorite)
     req, _ := http.NewRequest("POST", reqURL, bytes.NewBuffer(jsonData))
     req.Header.Set("x-api-key", apiKey)
     req.Header.Set("Content-Type", "application/json")
 
-    client := &http.Client{}
+    client := c.httpClient
+	if client == nil {
+        client = &http.Client{}
+    }
     resp, err := client.Do(req)
     if err != nil {
         errMsg := fmt.Sprintf("Failed to create favorite: %v", err)
@@ -400,7 +444,10 @@ func (c *CatController) GetFavorites() {
     req, _ := http.NewRequest("GET", reqURL, nil)
     req.Header.Set("x-api-key", apiKey)
 
-    client := &http.Client{}
+    client := c.httpClient
+    if client == nil {
+        client = &http.Client{}
+    }
     resp, err := client.Do(req)
     if err != nil {
         c.Data["json"] = map[string]string{"error": "Failed to fetch favorites"}
@@ -453,7 +500,10 @@ func (c *CatController) DeleteFavorite() {
     req.Header.Set("x-api-key", apiKey)
     
     // Send request
-    client := &http.Client{}
+	client := c.httpClient
+    if client == nil {
+        client = &http.Client{}
+    }
     resp, err := client.Do(req)
     if err != nil {
         c.Data["json"] = map[string]string{"error": "Failed to delete favorite"}
@@ -478,3 +528,5 @@ func (c *CatController) DeleteFavorite() {
     c.Data["json"] = map[string]string{"message": "Favorite deleted successfully"}
     c.ServeJSON()
 }
+
+

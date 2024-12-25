@@ -6,6 +6,5 @@ import (
 )
 
 func main() {
-	// Start the Beego web application
 	web.Run()
 }
