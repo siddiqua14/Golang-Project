@@ -59,14 +59,13 @@ type Breed struct {
 }
 
 // Modify GetCatImage to use the new signature of FetchCatImage
+
+// GetCatImage handles the web request for a cat image
 func (c *CatController) GetCatImage() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
 	apiURL, _ := web.AppConfig.String("catapi.url")
 
-	client := &http.Client{} // Create an HTTP client
-
-	// Use the client in the FetchCatImage call
-	imageURL, err := FetchCatImage(client, apiURL, apiKey)
+	imageURL, err := c.FetchCatImage(apiURL, apiKey)
 	if err != nil {
 		c.Data["CatImage"] = ""
 	} else {
@@ -74,7 +73,6 @@ func (c *CatController) GetCatImage() {
 	}
 	c.TplName = "index.tpl"
 }
-
 // Modify GetCatImagesAPI to use the new signature of FetchCatImages
 func (c *CatController) GetCatImagesAPI() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
@@ -146,18 +144,27 @@ func (c *CatController) GetBreedImages() {
 	c.ServeJSON()
 }
 // Modify FetchCatImage to accept an *http.Client argument for testing
-func FetchCatImage(client *http.Client, apiURL, apiKey string) (string, error) {
+// FetchCatImage fetches a cat image from the API
+func (c *CatController) FetchCatImage(apiURL, apiKey string) (string, error) {
 	reqURL := apiURL + "/images/search?limit=1"
-	req, _ := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %v", err)
+	}
+
 	req.Header.Add("x-api-key", apiKey)
 
+	client := c.getHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error making request: %v", err)
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("error reading response: %v", err)
+	}
 
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("API returned status code %d", resp.StatusCode)
@@ -166,51 +173,56 @@ func FetchCatImage(client *http.Client, apiURL, apiKey string) (string, error) {
 	var result []CatImage
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error parsing response: %v", err)
 	}
 
-	if len(result) > 0 {
-		return result[0].URL, nil
+	if len(result) == 0 {
+		return "", fmt.Errorf("no images returned from API")
 	}
 
-	return "", nil
+	return result[0].URL, nil
 }
 
-// Modify FetchCatImages to accept an *http.Client argument for testing
-func FetchCatImages(client *http.Client, apiURL, apiKey string, imageChan chan []CatImage, errorChan chan error) {
+// FetchCatImages fetches multiple cat images from the API
+func FetchCatImages(client HTTPClient, apiURL, apiKey string, imageChan chan []CatImage, errorChan chan error) {
+	defer close(imageChan)
+	defer close(errorChan)
+
 	reqURL := apiURL + "/images/search?limit=10"
-	req, _ := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequest("GET", reqURL, nil)
+	if err != nil {
+		errorChan <- fmt.Errorf("error creating request: %v", err)
+		return
+	}
+	
 	req.Header.Add("x-api-key", apiKey)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		errorChan <- err
-		close(imageChan)
-		close(errorChan)
+		errorChan <- fmt.Errorf("error making request: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		errorChan <- fmt.Errorf("error reading response: %v", err)
+		return
+	}
+
 	if resp.StatusCode != 200 {
 		errorChan <- fmt.Errorf("API returned status code %d", resp.StatusCode)
-		close(imageChan)
-		close(errorChan)
 		return
 	}
 
 	var result []CatImage
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		errorChan <- err
-		close(imageChan)
-		close(errorChan)
+		errorChan <- fmt.Errorf("error parsing response: %v", err)
 		return
 	}
 
 	imageChan <- result
-	close(imageChan)
-	close(errorChan)
 }
 
 // Fetch Breeds Concurrently

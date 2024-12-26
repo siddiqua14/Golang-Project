@@ -9,6 +9,8 @@ import (
 	"testing"
     "strings"
 	"fmt"
+    "errors"
+    "time"
 
 	"github.com/beego/beego/v2/server/web"
 	"github.com/beego/beego/v2/server/web/context"
@@ -16,7 +18,20 @@ import (
 	"catapi/controllers"
    //"github.com/stretchr/testify/mock"
 )
+// MockHTTPClient for testing
+type MockHTTPClient struct {
+    DoFunc func(req *http.Request) (*http.Response, error)
+}
 
+func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	if m.DoFunc != nil {
+		return m.DoFunc(req)
+	}
+	return &http.Response{
+		StatusCode: 200,
+		Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
+	}, nil
+}
 var (
 	apiURL string
 	apiKey string
@@ -44,24 +59,11 @@ func setupTestConfig() {
 	}
 	apiKey, err = web.AppConfig.String("catapi.key")
 	if err != nil {
-		apiKey = "test-api-key" // default value
+		apiKey = "live_UeBfmyQ9TgLkkVLKsIF6FdYu9vaXTfddUioxblmRAkLgNBf8b1ko08b0KMOvHmfC" // default value
 	}
 }
 
-// MockHTTPClient for testing
-type MockHTTPClient struct {
-    DoFunc func(req *http.Request) (*http.Response, error)
-}
 
-func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-    if m.DoFunc != nil {
-        return m.DoFunc(req)
-    }
-    return &http.Response{
-        StatusCode: 200,
-        Body:       ioutil.NopCloser(bytes.NewBufferString(`{"message": "SUCCESS"}`)),
-    }, nil
-}
 
 // setupController creates and initializes a controller for testing
 func setupController(w http.ResponseWriter, r *http.Request) *controllers.CatController {
@@ -85,7 +87,7 @@ func TestCreateVote(t *testing.T) {
         {
             name: "Valid Vote",
             voteData: map[string]interface{}{
-                "image_id": "test123",
+                "image_id": "test123", 
                 "value":    1,
             },
             expectedCode: 200,
@@ -97,7 +99,33 @@ func TestCreateVote(t *testing.T) {
                 }, nil
             },
         },
-        // ... rest of your test cases
+        {
+            name: "API Returns Error Status",
+            voteData: map[string]interface{}{
+                "image_id": "test123",
+                "value":    1,
+            },
+            expectedCode: 400,
+            expectedBody: map[string]string{"error": "API returned status code 400: Bad Request"},
+            mockResponse: func() (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 400,
+                    Body:       ioutil.NopCloser(bytes.NewBufferString("Bad Request")),
+                }, nil
+            },
+        },
+        {
+            name: "HTTP Client Error",
+            voteData: map[string]interface{}{
+                "image_id": "test123",
+                "value":    1,
+            },
+            expectedCode: 500,
+            expectedBody: map[string]string{"error": "Failed to create vote: network error"},
+            mockResponse: func() (*http.Response, error) {
+                return nil, fmt.Errorf("network error")
+            },
+        },
     }
 
     for _, tt := range tests {
@@ -129,66 +157,89 @@ func TestCreateVote(t *testing.T) {
     }
 }
 
-
 func TestGetVotes(t *testing.T) {
-	tests := []struct {
-		name         string
-		expectedCode int
-		mockResponse func() (*http.Response, error)
-	}{
-		{
-			name:         "Successful Votes Fetch",
-			expectedCode: 200,
-			mockResponse: func() (*http.Response, error) {
-				return &http.Response{
-					StatusCode: 200,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(`[{"id": "123", "value": 1}]`)),
-				}, nil
-			},
-		},
-		{
-			name:         "API Error",
-			expectedCode: 500,
-			mockResponse: func() (*http.Response, error) {
-				return &http.Response{
-					StatusCode: 500,
-					Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "Internal Server Error"}`)),
-				}, nil
-			},
-		},
-	}
+    tests := []struct {
+        name         string
+        expectedCode int
+        expectedBody map[string]string
+        mockResponse func() (*http.Response, error)
+    }{
+        {
+            name:         "Successful Votes Fetch",
+            expectedCode: 200,
+            mockResponse: func() (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 200,
+                    Body:       ioutil.NopCloser(bytes.NewBufferString(`[{"id": "123", "value": 1}]`)),
+                }, nil
+            },
+        },
+        {
+            name:         "API Error",
+            expectedCode: 500,
+            expectedBody: map[string]string{"error": "Failed to fetch votes"},
+            mockResponse: func() (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 500,
+                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "Internal Server Error"}`)),
+                }, nil
+            },
+        },
+        {
+            name:         "HTTP Client Error",
+            expectedCode: 500,
+            expectedBody: map[string]string{"error": "Failed to fetch votes"},
+            mockResponse: func() (*http.Response, error) {
+                return nil, fmt.Errorf("network error")
+            },
+        },
+        {
+            name:         "Invalid JSON Response",
+            expectedCode: 500,
+            expectedBody: map[string]string{"error": "Failed to parse votes"},
+            mockResponse: func() (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 200,
+                    Body:       ioutil.NopCloser(bytes.NewBufferString(`{invalid json`)),
+                }, nil
+            },
+        },
+    }
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create test recorder and request
-			w := httptest.NewRecorder()
-			r, _ := http.NewRequest("GET", "/api/votes", nil)
-			
-			// Setup controller using helper function
-			controller := setupController(w, r)
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            w := httptest.NewRecorder()
+            r, _ := http.NewRequest("GET", "/api/votes", nil)
+            
+            controller := setupController(w, r)
 
-			// Override the HTTP client with mock if provided
-			if tt.mockResponse != nil {
-				httpClient := &MockHTTPClient{
-					DoFunc: func(req *http.Request) (*http.Response, error) {
-						return tt.mockResponse()
-					},
-				}
-				controller.SetHTTPClient(httpClient)
-			}
+            if tt.mockResponse != nil {
+                httpClient := &MockHTTPClient{
+                    DoFunc: func(req *http.Request) (*http.Response, error) {
+                        return tt.mockResponse()
+                    },
+                }
+                controller.SetHTTPClient(httpClient)
+            }
 
-			// Call the method
-			controller.GetVotes()
+            controller.GetVotes()
 
-			// Assert response code
-			assert.Equal(t, tt.expectedCode, w.Code)
+            assert.Equal(t, tt.expectedCode, w.Code)
 
-			// Verify response is valid JSON
-			var response interface{}
-			err := json.Unmarshal(w.Body.Bytes(), &response)
-			assert.NoError(t, err, "Response should be valid JSON")
-		})
-	}
+            // For error cases, check specific error messages
+            if tt.expectedBody != nil {
+                var response map[string]string
+                err := json.Unmarshal(w.Body.Bytes(), &response)
+                assert.NoError(t, err, "Response should be valid JSON")
+                assert.Equal(t, tt.expectedBody, response)
+            } else {
+                // For successful case, just verify it's valid JSON
+                var response interface{}
+                err := json.Unmarshal(w.Body.Bytes(), &response)
+                assert.NoError(t, err, "Response should be valid JSON")
+            }
+        })
+    }
 }
 
 func TestCreateFavorite(t *testing.T) {
@@ -463,32 +514,104 @@ func TestDeleteFavorite(t *testing.T) {
     }
 }
 
+func TestFetchBreeds_MultipleScenarios(t *testing.T) {
+    apiURL := "https://api.example.com"
+    apiKey := "test-api-key"
 
-func TestFetchBreeds_Success(t *testing.T) {
-    // Mock successful response
-    mockResponseBody := `[{"id":"beng","name":"Bengal"},{"id":"siam","name":"Siamese"}]`
-    mockClient := &MockHTTPClient{
-        DoFunc: func(req *http.Request) (*http.Response, error) {
-            return &http.Response{
-                StatusCode: 200,
-                Body:       ioutil.NopCloser(strings.NewReader(mockResponseBody)),
-            }, nil
-        },
-    }
+    t.Run("Successful Response", func(t *testing.T) {
+        mockResponseBody := `[{"id":"beng","name":"Bengal"},{"id":"siam","name":"Siamese"}]`
+        mockClient := &MockHTTPClient{
+            DoFunc: func(req *http.Request) (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 200,
+                    Body:       ioutil.NopCloser(strings.NewReader(mockResponseBody)),
+                }, nil
+            },
+        }
 
-    breedChan := make(chan []controllers.Breed, 1)
-    errorChan := make(chan error, 1)
+        breedChan := make(chan []controllers.Breed, 1)
+        errorChan := make(chan error, 1)
 
-    // Pass mockClient as HTTPClient
-    go controllers.FetchBreeds(apiURL, apiKey, mockClient, breedChan, errorChan)
+        go controllers.FetchBreeds(apiURL, apiKey, mockClient, breedChan, errorChan)
 
-    select {
-    case breeds := <-breedChan:
-        assert.Equal(t, 2, len(breeds), "Expected 2 breeds")
-        assert.Equal(t, "Bengal", breeds[0].Name, "First breed should be Bengal")
-    case err := <-errorChan:
-        t.Fatalf("Unexpected error: %v", err)
-    }
+        select {
+        case breeds := <-breedChan:
+            assert.Equal(t, 2, len(breeds), "Expected 2 breeds")
+            assert.Equal(t, "Bengal", breeds[0].Name, "First breed should be Bengal")
+        case err := <-errorChan:
+            t.Fatalf("Unexpected error: %v", err)
+        }
+    })
+
+    t.Run("Client Do Error", func(t *testing.T) {
+        mockClient := &MockHTTPClient{
+            DoFunc: func(req *http.Request) (*http.Response, error) {
+                return nil, fmt.Errorf("network error")
+            },
+        }
+
+        breedChan := make(chan []controllers.Breed, 1)
+        errorChan := make(chan error, 1)
+
+        go controllers.FetchBreeds(apiURL, apiKey, mockClient, breedChan, errorChan)
+
+        select {
+        case <-breedChan:
+            t.Fatal("Expected error, but received breeds")
+        case err := <-errorChan:
+            assert.Error(t, err)
+            assert.Contains(t, err.Error(), "network error")
+        }
+    })
+
+    t.Run("Non-200 Status Code", func(t *testing.T) {
+        mockClient := &MockHTTPClient{
+            DoFunc: func(req *http.Request) (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 404,
+                    Body:       ioutil.NopCloser(strings.NewReader("Not Found")),
+                }, nil
+            },
+        }
+
+        breedChan := make(chan []controllers.Breed, 1)
+        errorChan := make(chan error, 1)
+
+        go controllers.FetchBreeds(apiURL, apiKey, mockClient, breedChan, errorChan)
+
+        select {
+        case <-breedChan:
+            t.Fatal("Expected error, but received breeds")
+        case err := <-errorChan:
+            assert.Error(t, err)
+            assert.Contains(t, err.Error(), "API returned status code 404")
+        }
+    })
+
+    t.Run("JSON Unmarshal Error", func(t *testing.T) {
+        mockResponseBody := `[{"id":"beng","name":123}]` // Invalid JSON
+        mockClient := &MockHTTPClient{
+            DoFunc: func(req *http.Request) (*http.Response, error) {
+                return &http.Response{
+                    StatusCode: 200,
+                    Body:       ioutil.NopCloser(strings.NewReader(mockResponseBody)),
+                }, nil
+            },
+        }
+
+        breedChan := make(chan []controllers.Breed, 1)
+        errorChan := make(chan error, 1)
+
+        go controllers.FetchBreeds(apiURL, apiKey, mockClient, breedChan, errorChan)
+
+        select {
+        case <-breedChan:
+            t.Fatal("Expected error, but received breeds")
+        case err := <-errorChan:
+            assert.Error(t, err)
+            assert.Contains(t, err.Error(), "cannot unmarshal")
+        }
+    })
 }
 func TestGetBreedImages_Success(t *testing.T) {
 	// Mock successful response
@@ -523,32 +646,139 @@ func TestGetBreedImages_Success(t *testing.T) {
 	}
 }
 
-func TestFetchCatImage(t *testing.T) {
-	// Mock HTTP client and response as needed
-	client := &http.Client{}
-	apiURL := "https://api.thecatapi.com/v1"
-	apiKey := "test-api-key"
+// TestGetCatImage tests the GetCatImage method of the CatController
 
-	imageURL, err := controllers.FetchCatImage(client, apiURL, apiKey)
+func TestGetCatImage(t *testing.T) {
+	req, err := http.NewRequest("GET", "/api/catimage", nil)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, imageURL)
+
+	rr := httptest.NewRecorder()
+
+	// Initialize the controller
+	controller := setupController(rr, req)
+
+	// Mock HTTP client
+	mockClient := &MockHTTPClient{
+		DoFunc: func(req *http.Request) (*http.Response, error) {
+			// Assert API URL and key in the request
+			assert.Equal(t, apiURL+"/images/search?limit=1", req.URL.String())
+			assert.Equal(t, apiKey, req.Header.Get("x-api-key"))
+
+			// Return a fake response
+			mockResponse := []controllers.CatImage{
+				{URL: "https://cdn2.thecatapi.com/images/test-cat.jpg"},
+			}
+			responseBody, _ := json.Marshal(mockResponse)
+
+			return &http.Response{
+				StatusCode: 200,
+				Body:       ioutil.NopCloser(bytes.NewBuffer(responseBody)),
+			}, nil
+		},
+	}
+
+	// Set the mock client
+	controller.SetHTTPClient(mockClient)
+
+	// Call GetCatImage
+	controller.GetCatImage()
+
+	// Check the results
+	assert.Contains(t, controller.Data["CatImage"], "https://cdn2.thecatapi.com/images/test-cat.jpg")
+	assert.Equal(t, "index.tpl", controller.TplName)
 }
-
 func TestFetchCatImages(t *testing.T) {
-	// Mock HTTP client and response as needed
-	client := &http.Client{}
-	apiURL := "https://api.thecatapi.com/v1"
-	apiKey := "test-api-key"
+	tests := []struct {
+		name           string
+		mockResponse   *http.Response
+		mockError      error
+		expectedError  bool
+		expectedImages bool
+	}{
+		{
+			name: "successful_fetch",
+			mockResponse: &http.Response{
+				StatusCode: 200,
+				Body: ioutil.NopCloser(bytes.NewBufferString(`[
+					{"url": "http://example.com/cat1.jpg"},
+					{"url": "http://example.com/cat2.jpg"}
+				]`)),
+			},
+			mockError:      nil,
+			expectedError:  false,
+			expectedImages: true,
+		},
+		{
+			name:           "http_client_error",
+			mockResponse:   nil,
+			mockError:      errors.New("network error"),
+			expectedError:  true,
+			expectedImages: false,
+		},
+		{
+			name: "api_error_status",
+			mockResponse: &http.Response{
+				StatusCode: 500,
+				Body:       ioutil.NopCloser(bytes.NewBufferString(`{"error": "server error"}`)),
+			},
+			mockError:      nil,
+			expectedError:  true,
+			expectedImages: false,
+		},
+		{
+			name: "invalid_json_response",
+			mockResponse: &http.Response{
+				StatusCode: 200,
+				Body:       ioutil.NopCloser(bytes.NewBufferString(`invalid json`)),
+			},
+			mockError:      nil,
+			expectedError:  true,
+			expectedImages: false,
+		},
+	}
 
-	imageChan := make(chan []controllers.CatImage)
-	errorChan := make(chan error)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create mock client
+			mockClient := &MockHTTPClient{
+				DoFunc: func(req *http.Request) (*http.Response, error) {
+					// Verify request headers and URL
+					assert.Equal(t, apiURL+"/images/search?limit=10", req.URL.String())
+					assert.Equal(t, apiKey, req.Header.Get("x-api-key"))
+					
+					return tc.mockResponse, tc.mockError
+				},
+			}
 
-	go controllers.FetchCatImages(client, apiURL, apiKey, imageChan, errorChan)
+			imageChan := make(chan []controllers.CatImage)
+			errorChan := make(chan error)
 
-	select {
-	case images := <-imageChan:
-		assert.NotNil(t, images)
-	case err := <-errorChan:
-		t.Fatalf("Error fetching cat images: %v", err)
+			// Run FetchCatImages in a goroutine
+			go controllers.FetchCatImages(mockClient, apiURL, apiKey, imageChan, errorChan)
+
+			// Use select with timeout to prevent test from hanging
+			select {
+			case images := <-imageChan:
+				if tc.expectedError {
+					t.Error("Expected error but got images")
+				}
+				if tc.expectedImages {
+					assert.NotNil(t, images)
+					assert.Greater(t, len(images), 0)
+				}
+			case err := <-errorChan:
+				if !tc.expectedError {
+					t.Errorf("Expected success but got error: %v", err)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("Test timed out")
+			}
+
+			// Verify channels are closed
+			_, ok1 := <-imageChan
+			assert.False(t, ok1, "Image channel should be closed")
+			_, ok2 := <-errorChan
+			assert.False(t, ok2, "Error channel should be closed")
+		})
 	}
 }
