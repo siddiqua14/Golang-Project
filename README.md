@@ -24,22 +24,25 @@ Before you begin, ensure you have met the following requirements:
 - **Git**: For cloning the repository.
 
 ## Installation and Setup
-### Step 1: Clone the repository
-To get started, clone the project repository:
 
-```bash
-git clone https://github.com/siddiqua14/Golang-Project.git
-cd Golang-Project/catapi
-```
-
-### Step 2: Install Go
+### Step 1: Install Go
    - Download and install Go from [https://go.dev/dl/](https://go.dev/dl/).
    - Verify installation:
      ```bash
      go version
      ```
+### Step 2: Clone the repository
+To get started, clone the project repository:
+1. Navigate to your Go src `/go/src` directory to ensure the project is placed in the correct directory for your Go workspace.
+2. Clone the repository:
+```bash
+git clone https://github.com/siddiqua14/Golang-Project.git
+cd Golang-Project/catapi
+```
+Now the project is properly set up in your Go workspace at ~/go/src/Golang-Project/catapi, which is the correct location for Go to find and manage the project dependencies. 
+
 ### Step 3: Install Beego Framework
-Beego is the framework used for this project, and Bee CLI is a development tool.
+Beego is the framework used for this project, and Bee CLI is a development tool. If `Beego` is not installed in your workspace,
 - Install them by running:
 ```bash
 go get github.com/beego/beego/v2@latest
@@ -103,7 +106,7 @@ Run the following command to start the Beego application:
 bee run
 ```
 ### Step 2: Access the Application
-Open your browser and navigate to: `http://localhost:8080`
+Open your browser and navigate to: `http://localhost:8000`
 
 ![Screenshot from 2024-12-26 16-33-33](https://github.com/user-attachments/assets/0ee5ee18-aa6c-43d4-a1f6-2d8309220a3c)
 
@@ -140,7 +143,7 @@ The default layout is the voting section where you can view random cat images an
 - Delete: You can delete an image from the favorites by clicking the `×` button.
 
 ## API Endpoints
-The application exposes the following routes. You can access these APIs on your local machine by visiting` http://localhost:8080`.
+The application exposes the following routes. You can access these APIs on your local machine by visiting` http://localhost:8000`.
 
 1. GET `/`
 - Controller Method: `GetCatImage`
@@ -157,7 +160,7 @@ The application exposes the following routes. You can access these APIs on your 
 5. GET `/getFavorites`
 - Controller Method: `GetFavorites`
 - Description: Retrieves a list of all cat images marked as favorites.
-You can test these routes by running the application locally. Ensure that the app is running on `http://localhost:8080` and use tools like Postman or cURL to make requests to the API endpoints.
+You can test these routes by running the application locally. Ensure that the app is running on `http://localhost:8000` and use tools like Postman or cURL to make requests to the API endpoints.
 ## Unit Testing
 
 This project includes unit tests to ensure code reliability.

@@ -423,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     slideInterval = setInterval(() => {
       const nextIndex = (currentSlideIndex + 1) % totalSlides;
       goToSlide(nextIndex);
-    }, 3000); // Change slide every 3 seconds
+    }, 4000); // Change slide every 4 seconds
   }
 
   function goToSlide(index) {
