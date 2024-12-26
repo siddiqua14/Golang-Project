@@ -1,4 +1,6 @@
 mode: set
+catapi/routers/router.go:8.13,19.2 9 0
+catapi/main.go:8.13,10.2 1 0
 catapi/controllers/cat_controller.go:21.58,23.2 1 0
 catapi/controllers/cat_controller.go:26.52,27.28 1 0
 catapi/controllers/cat_controller.go:27.28,29.6 1 0
@@ -103,8 +105,6 @@ catapi/controllers/cat_controller.go:526.5,529.31 2 0
 catapi/controllers/cat_controller.go:529.31,537.6 7 0
 catapi/controllers/cat_controller.go:540.5,541.18 2 0
 catapi/controllers/default.go:11.32,15.2 3 0
-catapi/routers/router.go:8.13,19.2 9 0
-catapi/main.go:8.13,10.2 1 0
 catapi/controllers/cat_controller.go:21.58,23.2 1 1
 catapi/controllers/cat_controller.go:26.52,27.28 1 1
 catapi/controllers/cat_controller.go:27.28,29.6 1 1
