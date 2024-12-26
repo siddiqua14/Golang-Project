@@ -73,7 +73,7 @@ echo $env:Path
 bee version
 ```
 
-### Step 3: Install Dependencies
+### Step 4: Install Dependencies
 
 After installing the required Go modules and Beego dependencies:
 
