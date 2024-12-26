@@ -137,8 +137,25 @@ The default layout is the voting section where you can view random cat images an
 
 - Delete: You can delete an image from the favorites by clicking the `×` button.
 
+## API Endpoints
+The application exposes the following routes. You can access these APIs on your local machine by visiting` http://localhost:8080`.
 
-
+1. GET `/`
+- Controller Method: `GetCatImage`
+- Description: Displays a random cat image on the homepage.
+2. GET `/api/catimage`
+- Controller Method: `GetCatImagesAPI`
+- Description: Fetches a random cat image via the API. This endpoint returns the image URL in JSON format.
+3. GET `/votes`
+- Controller Method: `GetVotes`
+- Description: Retrieves all the votes that have been cast for cat images.
+4. GET `/api/breeds`
+- Controller Method: `GetBreeds`
+- Description: Fetches a list of all cat breeds from the API.
+5. GET `/getFavorites`
+- Controller Method: `GetFavorites`
+- Description: Retrieves a list of all cat images marked as favorites.
+You can test these routes by running the application locally. Ensure that the app is running on `http://localhost:8080` and use tools like Postman or cURL to make requests to the API endpoints.
 ## Unit Testing
 
 This project includes unit tests to ensure code reliability.
@@ -152,6 +169,10 @@ go test ./tests -v
 ```bash
 go test -coverprofile coverage.out ./...
 go tool cover -html coverage.out
+```
+or,
+```bash
+go test ./... -coverprofile=coverage.out && go tool cover -func=coverage.out
 ```
 
 ## Notes

@@ -62,17 +62,22 @@ type Breed struct {
 
 // GetCatImage handles the web request for a cat image
 func (c *CatController) GetCatImage() {
-	apiKey, _ := web.AppConfig.String("catapi.key")
-	apiURL, _ := web.AppConfig.String("catapi.url")
+    if c.Data == nil {
+        c.Data = make(map[interface{}]interface{}) // Use the correct map type
+    }
 
-	imageURL, err := c.FetchCatImage(apiURL, apiKey)
-	if err != nil {
-		c.Data["CatImage"] = ""
-	} else {
-		c.Data["CatImage"] = imageURL
-	}
-	c.TplName = "index.tpl"
+    apiKey, _ := web.AppConfig.String("catapi.key")
+    apiURL, _ := web.AppConfig.String("catapi.url")
+
+    imageURL, err := c.FetchCatImage(apiURL, apiKey)
+    if err != nil {
+        c.Data["CatImage"] = "" // Use string key
+    } else {
+        c.Data["CatImage"] = imageURL
+    }
+    c.TplName = "index.tpl"
 }
+
 // Modify GetCatImagesAPI to use the new signature of FetchCatImages
 func (c *CatController) GetCatImagesAPI() {
 	apiKey, _ := web.AppConfig.String("catapi.key")
@@ -143,7 +148,6 @@ func (c *CatController) GetBreedImages() {
 
 	c.ServeJSON()
 }
-// Modify FetchCatImage to accept an *http.Client argument for testing
 // FetchCatImage fetches a cat image from the API
 func (c *CatController) FetchCatImage(apiURL, apiKey string) (string, error) {
 	reqURL := apiURL + "/images/search?limit=1"
