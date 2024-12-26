@@ -105,6 +105,8 @@ bee run
 ### Step 2: Access the Application
 Open your browser and navigate to: `http://localhost:8080`
 
+![Screenshot from 2024-12-26 16-33-33](https://github.com/user-attachments/assets/0ee5ee18-aa6c-43d4-a1f6-2d8309220a3c)
+
 
 ## Application Layout and Features
 ### Voting Layout
